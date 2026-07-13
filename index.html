@@ -610,7 +610,7 @@ function renderLearn() {
   }
   showCard();
 }
-const APP_V = '1.2';
+const APP_V = '1.3';
 function nextDueText() {
   const now = Date.now();
   const dues = S.words.filter(w => w.seen && w.lv < 5 && w.due > now).map(w => w.due);
@@ -1327,6 +1327,24 @@ function finishOb() {
 /* ================= BOOT ================= */
 if (S.ob) { $('#appwrap').hidden = false; header(); go('learn'); }
 else { $('#ob').hidden = false; }
+
+/* auto-update: check for a newer build on open and on return to foreground */
+async function checkUpdate() {
+  if (location.protocol === 'file:') return;
+  try {
+    const res = await fetch(location.pathname + '?u=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) return;
+    const m = (await res.text()).match(/APP_V = '([\d.]+)'/);
+    if (!m || m[1] === APP_V) return;
+    if (sessionStorage.getItem('updTried') === m[1]) return;
+    sessionStorage.setItem('updTried', m[1]);
+    try { await fetch(location.href, { cache: 'reload' }); } catch (e) {}
+    toast('Updating to v' + m[1] + '…', '#7C3AED');
+    setTimeout(() => location.reload(), 900);
+  } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkUpdate(); });
+checkUpdate();
 </script>
 </body>
 </html>
