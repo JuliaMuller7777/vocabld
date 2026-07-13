@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#7C3AED">
+<title>Vocabld</title>
+<style>
+  :root {
+    --purple: #7C3AED;
+    --purple-light: #EDE9FE;
+    --yellow: #F59E0B;
+    --yellow-light: #FEF3C7;
+    --green: #10B981;
+    --green-light: #D1FAE5;
+    --red: #EF4444;
+    --red-light: #FEE2E2;
+    --blue: #3B82F6;
+    --blue-light: #DBEAFE;
+    --pink: #DB2777;
+    --pink-soft: #F472B6;
+    --pink-light: #FCE7F3;
+    --tiffany: #0ABAB5;
+    --tiffany-light: #CFF5F2;
+    --teal: #0D9488;
+    --bg: #F8F7FF;
+    --text: #1E1B4B;
+    --text-soft: #6B7280;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg); color: var(--text);
+    display: flex; flex-direction: column;
+    max-width: 520px; margin: 0 auto;
+    overscroll-behavior: none;
+  }
+  button { font: inherit; cursor: pointer; border: none; background: none; }
+  [hidden] { display: none !important; }
+
+  /* header */
+  header {
+    background: white; border-bottom: 1px solid #F0EEF8;
+    padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 40;
+  }
+  .logo { font-size: 19px; font-weight: 900; letter-spacing: -0.5px; }
+  .logo span { color: var(--yellow); }
+  .hdr-right { display: flex; gap: 12px; align-items: center; font-size: 13px; font-weight: 800; }
+  .hdr-streak { color: #92400E; }
+  .hdr-xp { color: var(--teal); }
+
+  main { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+  nav {
+    background: white; border-top: 1px solid #F0EEF8;
+    padding: 8px 0 calc(10px + env(safe-area-inset-bottom));
+    display: flex; position: sticky; bottom: 0; z-index: 40;
+  }
+  .nv { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; font-weight: 700; color: var(--text-soft); }
+  .nv .ic { font-size: 20px; }
+  .nv.on { color: var(--purple); }
+
+  .card {
+    background: white; border-radius: 16px; padding: 16px;
+    box-shadow: 0 2px 12px rgba(124,58,237,0.07);
+  }
+  .card h4 { font-size: 13px; font-weight: 800; margin-bottom: 10px; }
+  .hint { font-size: 12px; color: var(--text-soft); line-height: 1.5; }
+
+  /* progress bar */
+  .pbar { height: 6px; background: var(--purple-light); border-radius: 10px; overflow: hidden; }
+  .pbar > div { height: 100%; background: linear-gradient(90deg, var(--purple), var(--pink-soft)); border-radius: 10px; transition: width 0.3s; }
+  .pmeta { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-soft); font-weight: 600; margin-top: 4px; }
+
+  /* pronunciation strip */
+  .pronun {
+    background: white; border: 1.5px solid #EDE9FE; border-radius: 12px;
+    padding: 9px 13px; display: flex; align-items: center; gap: 8px;
+  }
+  .pronun .lbl { font-size: 10px; font-weight: 600; color: var(--text-soft); white-space: nowrap; }
+  .pronun .txt { font-size: 15px; font-weight: 700; flex: 1; letter-spacing: 0.3px; }
+  .spk { font-size: 16px; padding: 2px 6px; border-radius: 6px; color: var(--blue); }
+
+  /* flashcard */
+  .fcwrap { perspective: 900px; flex: 1; min-height: 340px; position: relative; }
+  .fc {
+    width: 100%; height: 100%; position: absolute; inset: 0;
+    transform-style: preserve-3d; transition: transform 0.5s cubic-bezier(0.23,1,0.32,1);
+  }
+  .fc.flip { transform: rotateY(180deg); }
+  .face {
+    position: absolute; inset: 0; backface-visibility: hidden;
+    background: white; border: 2px solid #EDE9FE; border-radius: 20px;
+    padding: 22px 20px; display: flex; flex-direction: column;
+    box-shadow: 0 4px 20px rgba(124,58,237,0.12);
+  }
+  .front { align-items: center; justify-content: center; gap: 14px; }
+  .back { transform: rotateY(180deg); justify-content: space-between; gap: 10px; }
+  .emoji { font-size: 60px; line-height: 1; }
+  .word { font-size: 28px; font-weight: 900; color: var(--purple); letter-spacing: -1px; text-align: center; }
+  .pos { font-size: 11px; color: var(--text-soft); font-weight: 600; }
+  .taphint { font-size: 11px; color: var(--text-soft); }
+  .bword { font-size: 16px; font-weight: 800; color: var(--purple); }
+  .bpos { font-size: 10px; font-weight: 500; color: var(--text-soft); }
+  .bdef { font-size: 15px; font-weight: 600; line-height: 1.45; margin: 8px 0 4px; }
+  .hookbtn {
+    display: inline-block; margin-top: 6px; align-self: flex-start;
+    background: var(--yellow-light); color: #92400E;
+    border-radius: 20px; padding: 5px 12px; font-size: 11px; font-weight: 700;
+  }
+  .hook { font-size: 12px; color: var(--text-soft); line-height: 1.6; margin-top: 8px; }
+  .sent { font-size: 12px; color: var(--text-soft); font-style: italic; line-height: 1.5; }
+  .sent em { color: var(--purple); font-style: normal; font-weight: 600; }
+  .dots { display: flex; gap: 4px; margin-top: 6px; }
+  .dot { width: 16px; height: 6px; border-radius: 3px; background: #E5E7EB; }
+  .dot.f { background: var(--purple); }
+
+  .rrow { display: flex; gap: 8px; }
+  .rbtn {
+    flex: 1; padding: 11px 4px 9px; border-radius: 12px;
+    font-weight: 700; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  }
+  .rbtn .t { font-size: 13px; }
+  .rbtn .s { font-size: 10px; font-weight: 500; opacity: 0.65; }
+  .r-again { background: var(--red-light); color: var(--red); }
+  .r-hard { background: var(--yellow-light); color: #92400E; }
+  .r-easy { background: var(--green-light); color: #065F46; }
+
+  /* games hub */
+  .gcard {
+    display: flex; align-items: center; gap: 14px;
+    background: white; border-radius: 16px; padding: 16px;
+    box-shadow: 0 2px 12px rgba(124,58,237,0.07); width: 100%; text-align: left;
+  }
+  .gcard .gi { font-size: 30px; width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .gcard .gt { font-size: 15px; font-weight: 800; }
+  .gcard .gs { font-size: 12px; color: var(--text-soft); margin-top: 2px; }
+  .gcard.locked { opacity: 0.55; }
+
+  /* quiz */
+  .qbox {
+    background: linear-gradient(135deg, var(--pink), var(--pink-soft));
+    color: white; border-radius: 16px; padding: 20px; text-align: center;
+  }
+  .qword { font-size: 26px; font-weight: 900; letter-spacing: -1px; }
+  .qpron { font-size: 13px; font-weight: 600; opacity: 0.9; margin-top: 4px; }
+  .qc {
+    width: 100%; text-align: left; padding: 12px 14px; border-radius: 12px;
+    border: 2px solid #E5E7EB; background: white; font-size: 13px; font-weight: 500;
+    display: flex; align-items: center; gap: 10px; transition: all 0.15s;
+  }
+  .qc .ql {
+    width: 24px; height: 24px; border-radius: 50%; background: #F3F4F6; color: var(--text-soft);
+    display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;
+  }
+  .qc.ok { border-color: var(--green); background: var(--green-light); color: #065F46; }
+  .qc.ok .ql { background: var(--green); color: white; }
+  .qc.no { border-color: var(--red); background: var(--red-light); color: #991B1B; }
+  .qc.no .ql { background: var(--red); color: white; }
+
+  /* match */
+  .mhead {
+    display: flex; justify-content: space-between; align-items: center;
+    background: white; border-radius: 12px; padding: 10px 14px;
+    font-size: 12px; font-weight: 600; color: var(--text-soft);
+  }
+  .mhead strong { color: var(--teal); }
+  .mcols { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .mcol { display: flex; flex-direction: column; gap: 7px; }
+  .mt {
+    padding: 10px 11px; border-radius: 12px; border: 2px solid #E5E7EB;
+    background: white; font-size: 12px; font-weight: 500; min-height: 46px;
+    display: flex; align-items: center; line-height: 1.3; text-align: left; width: 100%;
+    transition: all 0.18s;
+  }
+  .mt.w { font-weight: 700; color: var(--teal); }
+  .mt.sel { border-color: var(--tiffany); background: var(--tiffany-light); }
+  .mt.done { border-color: var(--green); background: var(--green-light); color: #065F46; opacity: 0.75; }
+  .mt.shake { animation: sh 0.35s; border-color: var(--red); background: var(--red-light); }
+  @keyframes sh { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+  /* blitz */
+  .bz { background: linear-gradient(160deg, #1E1B4B, #3730A3); border-radius: 16px; padding: 20px; text-align: center; color: white; }
+  .bz .ring { width: 64px; height: 64px; margin: 0 auto 12px; position: relative; }
+  .bz .ring svg { transform: rotate(-90deg); }
+  .bz .rn { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; }
+  .bz .bdef2 { font-size: 14px; opacity: 0.85; margin: 6px 0 4px; line-height: 1.45; min-height: 40px; }
+  .bz .bhint { font-size: 12px; opacity: 0.6; margin-bottom: 14px; }
+  .bz input {
+    width: 100%; padding: 11px 14px; border-radius: 12px;
+    border: 2px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.08);
+    color: white; font-size: 16px; font-weight: 600; outline: none; text-transform: lowercase;
+  }
+  .bz input:focus { border-color: var(--yellow); }
+  .bdots { display: flex; gap: 5px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+  .bd { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.2); }
+  .bd.hit { background: var(--yellow); }
+  .bd.miss { background: var(--red); }
+  .boostbtn {
+    margin-top: 12px; background: rgba(255,255,255,0.1);
+    border: 1.5px dashed rgba(255,255,255,0.35); color: white;
+    border-radius: 20px; padding: 7px 14px; font-size: 12px; font-weight: 700;
+  }
+  .boostbtn.on { border-color: var(--yellow); background: rgba(245,158,11,0.2); }
+
+  /* progress screen */
+  .lvlbadge { background: var(--purple); color: white; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 20px; }
+  .xprow { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #F3F4F6; font-size: 12px; color: var(--text-soft); }
+  .xprow:last-child { border: none; }
+  .xprow strong { color: var(--purple); }
+  .sdays { display: flex; gap: 4px; justify-content: space-between; margin-bottom: 10px; }
+  .sday { flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .sday .dl { font-size: 10px; font-weight: 600; color: var(--text-soft); }
+  .sday .di { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; background: #F3F4F6; }
+  .sday .di.done { background: var(--yellow-light); }
+  .sday .di.today { background: var(--yellow); box-shadow: 0 0 0 3px rgba(245,158,11,0.25); }
+  .mrow { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+  .mrow .mw { font-size: 12px; font-weight: 600; width: 100px; flex-shrink: 0; text-transform: uppercase; }
+  .mrow .ml { font-size: 10px; font-weight: 600; width: 56px; text-align: right; color: var(--text-soft); }
+
+  /* shop */
+  .bal {
+    display: flex; justify-content: space-between; align-items: center;
+    background: linear-gradient(135deg, var(--teal), var(--tiffany));
+    color: white; border-radius: 14px; padding: 12px 15px;
+  }
+  .bal span { font-size: 12px; opacity: 0.85; font-weight: 600; }
+  .bal strong { font-size: 18px; font-weight: 900; }
+  .srow { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid #F3F4F6; }
+  .srow:last-child { border-bottom: none; }
+  .srow .se { font-size: 22px; width: 30px; text-align: center; flex-shrink: 0; }
+  .srow .si { flex: 1; min-width: 0; }
+  .srow .sn { font-size: 13px; font-weight: 700; }
+  .srow .ss { font-size: 11px; color: var(--text-soft); }
+  .sbtn {
+    border-radius: 20px; padding: 6px 12px; font-size: 11px; font-weight: 800; white-space: nowrap;
+    background: var(--tiffany-light); color: var(--teal); transition: all 0.15s;
+  }
+  .sbtn.owned { background: var(--green-light); color: #065F46; }
+  .sbtn.eq { background: var(--green); color: white; }
+
+  /* toast */
+  .toast {
+    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+    color: white; padding: 10px 20px; border-radius: 30px;
+    font-weight: 700; font-size: 13.5px; z-index: 9999;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25); white-space: nowrap; max-width: 92vw;
+    overflow: hidden; text-overflow: ellipsis;
+    animation: tin 0.25s ease; pointer-events: none;
+  }
+  @keyframes tin { from{opacity:0;transform:translateX(-50%) translateY(8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+
+  /* fx overlay */
+  #fx { position: fixed; inset: 0; pointer-events: none; z-index: 999; overflow: hidden; }
+  .p { position: absolute; border-radius: 50%; will-change: transform, opacity; }
+
+  /* card exit effects applied to .face or .fcwrap */
+  .fx-crumple { transition: transform 0.9s cubic-bezier(0.5,0,0.8,0.3), opacity 0.9s ease, border-radius 0.9s ease !important; transform: rotate(14deg) scale(0.25) translateY(340px) !important; opacity: 0 !important; border-radius: 60% !important; }
+  .fx-ink { transition: filter 1s ease, opacity 1s ease, transform 1s ease !important; filter: blur(16px) brightness(0.5); opacity: 0 !important; transform: scale(1.12) !important; }
+  .fx-fade { transition: opacity 0.7s ease, transform 0.7s ease !important; opacity: 0 !important; transform: scale(0.94) !important; }
+  .fx-slide { transition: opacity 0.35s ease, transform 0.35s ease !important; opacity: 0 !important; transform: translateX(-60px) !important; }
+
+  /* onboarding */
+  #ob { position: fixed; inset: 0; background: var(--bg); z-index: 100; display: flex; flex-direction: column; max-width: 520px; margin: 0 auto; }
+  .obtrack { flex: 1; display: flex; transition: transform 0.35s cubic-bezier(0.23,1,0.32,1); min-height: 0; }
+  .obs { min-width: 100%; padding: 34px 22px 12px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+  .obs .big { font-size: 46px; text-align: center; }
+  .obs h2 { font-size: 21px; font-weight: 900; text-align: center; line-height: 1.2; }
+  .obs h2 em { color: var(--purple); font-style: normal; }
+  .obs .sub { font-size: 13px; color: var(--text-soft); line-height: 1.6; text-align: center; }
+  .obcard { background: white; border-radius: 16px; padding: 14px 16px; border: 1.5px solid #EDE9FE; }
+  .obcard .ct { font-size: 11px; font-weight: 700; color: var(--text-soft); margin-bottom: 10px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .lrow { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+  .lrow .ld { font-size: 11px; font-weight: 600; color: #9CA3AF; width: 44px; flex-shrink: 0; }
+  .lrow .lp { display: flex; gap: 3px; flex: 1; }
+  .lrow .lp i { flex: 1; height: 6px; border-radius: 3px; background: #E5E7EB; }
+  .lrow .ll { font-size: 10px; font-weight: 700; width: 70px; text-align: right; }
+  .obnote { font-size: 11px; color: var(--text-soft); text-align: center; line-height: 1.5; margin-top: 8px; }
+  .rcard { border-radius: 14px; padding: 12px 14px; display: flex; gap: 12px; align-items: flex-start; }
+  .rcard .re { font-size: 22px; line-height: 1; flex-shrink: 0; }
+  .rcard .rt { font-size: 13.5px; font-weight: 800; }
+  .rcard .rs { font-size: 12px; margin-top: 2px; line-height: 1.45; }
+  .pinkbox { background: var(--pink-light); border-radius: 14px; padding: 12px 14px; font-size: 12px; color: var(--pink); line-height: 1.55; }
+  .obnav { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px calc(16px + env(safe-area-inset-bottom)); }
+  .obdots { display: flex; gap: 6px; }
+  .obdot { width: 7px; height: 7px; border-radius: 50%; background: #D1D5DB; transition: all 0.2s; }
+  .obdot.on { background: var(--purple); width: 20px; border-radius: 4px; }
+  .obnext { background: var(--purple); color: white; border-radius: 20px; font-size: 13px; font-weight: 700; padding: 8px 18px; }
+  .obback { font-size: 18px; color: var(--text-soft); padding: 4px 8px; visibility: hidden; }
+  .cta {
+    width: 100%; padding: 15px; background: linear-gradient(135deg, var(--purple), var(--pink-soft));
+    color: white; border-radius: 16px; font-size: 16px; font-weight: 800;
+    box-shadow: 0 4px 16px rgba(124,58,237,0.3); margin-top: 8px;
+  }
+  .bigbtn {
+    width: 100%; padding: 14px; border-radius: 14px; font-size: 15px; font-weight: 800;
+    background: var(--purple); color: white;
+  }
+  .ghost { background: var(--purple-light); color: var(--purple); }
+</style>
+</head>
+<body>
+
+<div id="ob" hidden>
+  <div class="obtrack" id="obtrack">
+    <div class="obs">
+      <div class="big">🧠</div>
+      <h2>Vocabld learns<br>how <em>you</em> forget</h2>
+      <div class="sub">Most apps drill on a fixed schedule. Vocabld times each review for the moment right before you'd forget.</div>
+      <div class="obcard">
+        <div class="ct">The interval ladder</div>
+        <div id="obladder"></div>
+        <div class="obnote">Easy fills a dot. Again empties one.<br>Five spaced dots and the word is yours.<br>Cramming doesn't count.</div>
+      </div>
+    </div>
+    <div class="obs">
+      <div class="big">⏱</div>
+      <h2>After every card,<br>you rate yourself</h2>
+      <div class="sub">Three buttons. Your honest answer sets when this word comes back.</div>
+      <div class="rcard" style="background:var(--red-light)"><span class="re">😬</span><div><div class="rt" style="color:var(--red)">Again · minutes</div><div class="rs" style="color:#991B1B">Blanked. It comes back this session. A dot empties.</div></div></div>
+      <div class="rcard" style="background:var(--yellow-light)"><span class="re">🤔</span><div><div class="rt" style="color:#92400E">Hard · hours</div><div class="rs" style="color:#92400E">Almost. Back soon. No dot.</div></div></div>
+      <div class="rcard" style="background:var(--green-light)"><span class="re">😎</span><div><div class="rt" style="color:#065F46">Easy · the gap doubles</div><div class="rs" style="color:#065F46">Nailed it. A dot fills. The word dies a little.</div></div></div>
+    </div>
+    <div class="obs">
+      <div class="big">⚡</div>
+      <h2>Where XP<br>comes from</h2>
+      <div class="sub">XP means experience points. They flow when the app checks what you know.</div>
+      <div class="obcard">
+        <div class="xprow"><span>Quiz correct</span><strong>+10 XP</strong></div>
+        <div class="xprow"><span>Match pair</span><strong>+10 XP</strong></div>
+        <div class="xprow"><span>Blitz answer</span><strong>+30 XP</strong></div>
+        <div class="xprow"><span>Streak 🔥 5+ days</span><strong>everything ×1.5</strong></div>
+      </div>
+      <div class="pinkbox"><strong>Flashcards pay +5 per review, any rating.</strong> Honesty costs nothing. The prizes sit on learning: <strong>+25</strong> per dot, <strong>+100</strong> to master a word.</div>
+      <div class="obnote">Spend it all in the Word Shop 🛍️</div>
+    </div>
+    <div class="obs" style="justify-content:center;align-items:center;gap:16px">
+      <div style="font-size:64px">🗡️</div>
+      <h2>You're ready.</h2>
+      <div class="sub" style="max-width:250px">Be honest with your ratings. A fake-Easy word will bail on you mid-sentence, in front of everyone.</div>
+      <button class="cta" onclick="finishOb()">Start hunting →</button>
+    </div>
+  </div>
+  <div class="obnav">
+    <button class="obback" id="obback" onclick="obNav(-1)">←</button>
+    <div class="obdots" id="obdots"></div>
+    <button class="obnext" id="obnext" onclick="obNav(1)">Next →</button>
+  </div>
+</div>
+
+<div id="appwrap" hidden style="display:flex;flex-direction:column;height:100%">
+  <header>
+    <div class="logo">Vocab<span>ld</span></div>
+    <div class="hdr-right">
+      <span class="hdr-streak" id="hstreak">🔥 0</span>
+      <span class="hdr-xp" id="hxp">⚡ 0 XP</span>
+    </div>
+  </header>
+  <main id="view"></main>
+  <nav>
+    <button class="nv on" data-t="learn" onclick="go('learn')"><span class="ic">🃏</span>Learn</button>
+    <button class="nv" data-t="games" onclick="go('games')"><span class="ic">🎮</span>Games</button>
+    <button class="nv" data-t="prog" onclick="go('prog')"><span class="ic">📊</span>Progress</button>
+    <button class="nv" data-t="shop" onclick="go('shop')"><span class="ic">🛍️</span>Shop</button>
+  </nav>
+</div>
+
+<div id="fx"></div>
+
+<script>
+'use strict';
+/* ================= WORDS ================= */
+const WORDS = [
+ ["ephemeral","adj","eh·FEM·er·ul","lasting a very short time","A butterfly lives just weeks. Here, then gone.","Her <em>ephemeral</em> fame faded by August.","🦋"],
+ ["sycophant","noun","SIK·uh·fant","someone who flatters powerful people for gain","The yes-person laughing hardest at the boss's jokes.","Kings surround themselves with <em>sycophants</em>.","🙇"],
+ ["garrulous","adj","GAR·uh·lus","talking too much, about nothing","The seatmate who narrates the whole flight.","My <em>garrulous</em> uncle retold the story four times.","🗣️"],
+ ["perfidious","adj","per·FID·ee·us","deceitful and disloyal","A friend who sells your secret.","The <em>perfidious</em> knight opened the gates to the enemy.","🐍"],
+ ["insipid","adj","in·SIP·id","flavorless; dull","Soup with no salt. Conversation with no point.","The sequel was <em>insipid</em> and forgettable.","🥣"],
+ ["tenacious","adj","teh·NAY·shus","holding on; refusing to quit","A dog with a rope toy.","Her <em>tenacious</em> training won the race.","🦴"],
+ ["loquacious","adj","loh·KWAY·shus","very talkative","The louder cousin of chatty.","The <em>loquacious</em> host barely let guests speak.","💬"],
+ ["ubiquitous","adj","yoo·BIK·wih·tus","seeming to be everywhere","Like phone chargers and pop ads.","Coffee shops are <em>ubiquitous</em> downtown.","📶"],
+ ["pragmatic","adj","prag·MAT·ik","practical, not idealistic","Chooses the umbrella, not the rain dance.","A <em>pragmatic</em> plan beats a perfect dream.","🔧"],
+ ["ambivalent","adj","am·BIV·uh·lent","having mixed feelings","Loving and dreading the party at once.","She felt <em>ambivalent</em> about moving away.","⚖️"],
+ ["candor","noun","KAN·der","honest, direct speech","Saying the hard thing kindly and out loud.","He admitted the failure with rare <em>candor</em>.","🪞"],
+ ["austere","adj","aw·STEER","strict; bare; without comfort","A room with one chair and no heat.","The monks kept an <em>austere</em> schedule.","🧱"],
+ ["capricious","adj","kuh·PRISH·us","changing on a whim","Weather that can't pick a mood.","A <em>capricious</em> referee ruins the game.","🎲"],
+ ["cogent","adj","KOH·jent","clear and convincing","An argument that ends the argument.","Her <em>cogent</em> case won the vote.","🎯"],
+ ["debacle","noun","deh·BAH·kul","a total failure; a fiasco","The group project that caught fire.","The launch was a <em>debacle</em> in front of the press.","💥"],
+ ["ebullient","adj","ih·BUL·yent","bubbling with excitement","A golden retriever at the front door.","The <em>ebullient</em> crowd sang all night.","🫧"],
+ ["enervate","verb","EN·er·vayt","to drain of energy","Sounds like energize. Means the opposite.","The heat <em>enervated</em> the hikers.","🪫"],
+ ["fastidious","adj","fa·STID·ee·us","extremely picky about details","Alphabetizes the spice rack.","A <em>fastidious</em> editor catches every comma.","🧹"],
+ ["gregarious","adj","greh·GAIR·ee·us","sociable; loving company","Finds friends in an elevator.","<em>Gregarious</em> kids own the lunch table.","🐑"],
+ ["hackneyed","adj","HAK·need","overused; stale","\"Think outside the box\" is hackneyed.","The film leaned on <em>hackneyed</em> lines.","📼"],
+ ["iconoclast","noun","eye·KON·uh·klast","someone who attacks tradition","Breaks the rules everyone else frames.","The chef was an <em>iconoclast</em>: no menus, ever.","🔨"],
+ ["juxtapose","verb","JUK·stuh·pohz","to place side by side for contrast","A mansion photo next to the food bank line.","The essay <em>juxtaposes</em> wealth and hunger.","🖼️"],
+ ["laconic","adj","luh·KON·ik","using very few words","Answers essays with one word.","His <em>laconic</em> \"fine\" ended the chat.","🤐"],
+ ["magnanimous","adj","mag·NAN·ih·mus","generous toward a rival","Congratulating the team that beat you.","A <em>magnanimous</em> champion praised the rookie.","🤝"],
+ ["nefarious","adj","neh·FAIR·ee·us","openly wicked","Villain-with-a-lair energy.","A <em>nefarious</em> plot to rig the vote.","😈"],
+ ["obfuscate","verb","OB·fus·kayt","to make deliberately confusing","Fine print doing its job.","The report <em>obfuscates</em> who approved it.","🌫️"],
+ ["ostentatious","adj","os·ten·TAY·shus","showy to impress","Gold faucets. Monogrammed everything.","An <em>ostentatious</em> car for a quiet man.","💎"],
+ ["paucity","noun","PAW·sih·tee","a shortage; too few","Plenty of talk, a paucity of proof.","A <em>paucity</em> of lifeguards closed the pool.","🕳️"],
+ ["quixotic","adj","kwik·SOT·ik","wildly idealistic; impractical","Fighting windmills, on purpose.","A <em>quixotic</em> plan to end traffic forever.","🎠"],
+ ["recalcitrant","adj","rih·KAL·sih·trent","stubbornly disobedient","A mule with opinions.","The <em>recalcitrant</em> toddler sat down mid-crosswalk.","🐴"],
+ ["sagacious","adj","suh·GAY·shus","wise in judgment","The grandmother who saw it coming.","A <em>sagacious</em> coach rested her star early.","🦉"],
+ ["taciturn","adj","TAS·ih·turn","habitually quiet","Speaks in nods.","The <em>taciturn</em> farmer waved us through.","🗿"],
+ ["venerate","verb","VEN·er·ayt","to deeply respect","How fans treat the greatest of all time.","The town <em>venerates</em> its founder.","🙏"],
+ ["wistful","adj","WIST·ful","sadly longing","Looking at old photos a beat too long.","A <em>wistful</em> smile at the empty field.","🌇"],
+ ["zealous","adj","ZEL·us","intensely devoted","Superfan energy, any subject.","A <em>zealous</em> recycler sorts by shade.","🔥"],
+ ["alacrity","noun","uh·LAK·rih·tee","cheerful eagerness","Saying yes before the sentence ends.","She accepted with <em>alacrity</em>.","⚡"],
+ ["brevity","noun","BREV·ih·tee","shortness of expression","Saying it in six words.","<em>Brevity</em> makes speeches survivable.","✂️"],
+ ["cacophony","noun","kuh·KOF·uh·nee","a harsh clash of sounds","Middle school band, week one.","A <em>cacophony</em> of horns filled the tunnel.","📢"],
+ ["deleterious","adj","del·ih·TEER·ee·us","harmful, often slowly","Rust, sugar, gossip.","Doomscrolling is <em>deleterious</em> to sleep.","☠️"],
+ ["eloquent","adj","EL·uh·kwent","fluent and moving with words","Says it once and everyone quotes it.","Her <em>eloquent</em> toast made the groom cry.","🎤"],
+ ["furtive","adj","FUR·tiv","sneaky; secretive","Texting under the table.","A <em>furtive</em> glance at the answer key.","🥷"],
+ ["hapless","adj","HAP·lis","unlucky","Rain on the one day you forgot the umbrella.","The <em>hapless</em> tourist boarded the wrong ferry twice.","🍌"],
+ ["impetuous","adj","im·PECH·oo·us","acting without thinking","Buys the ticket, then checks the date.","An <em>impetuous</em> dive into the shallow end.","🚀"],
+ ["lethargic","adj","leh·THAR·jik","sluggish; low energy","Post-lunch physics class.","The cat stayed <em>lethargic</em> till dinner.","🦥"],
+ ["mercurial","adj","mer·KYUR·ee·ul","quick to change moods","Sunshine, storm, sunshine, by noon.","A <em>mercurial</em> artist, brilliant and stormy.","🌦️"],
+ ["nonchalant","adj","non·shuh·LAHNT","coolly unconcerned","Shrugs at the fire drill.","He was <em>nonchalant</em> about the trophy.","😎"],
+ ["opulent","adj","OP·yuh·lent","lavishly wealthy","Chandeliers in the bathroom.","An <em>opulent</em> lobby of marble and gold.","👑"],
+ ["placate","verb","PLAY·kayt","to calm someone angry","Snacks for the toddler, refunds for the customer.","Free dessert <em>placated</em> the table.","🕊️"],
+ ["reticent","adj","RET·ih·sent","reluctant to share","Knows plenty, volunteers nothing.","She stayed <em>reticent</em> about the deal.","🤫"],
+ ["spurious","adj","SPYUR·ee·us","false, but plausible","A stat invented mid-argument.","The quote was <em>spurious</em>; he never said it.","🎭"]
+];
+const W = i => ({ w: WORDS[i][0], pos: WORDS[i][1], pron: WORDS[i][2], def: WORDS[i][3], hook: WORDS[i][4], sent: WORDS[i][5], emo: WORDS[i][6] });
+
+/* ================= STATE ================= */
+const KEY = 'vocabld-v1';
+const MIN = 60e3, HOUR = 3600e3, DAY = 86400e3;
+const LADDER = [8*HOUR, DAY, 2*DAY, 4*DAY];   // gap after filling dot 1,2,3,4
+const NEW_PER_DAY = 10;
+const ANIMS = [
+  { id:'shatter',  name:'Shatter',          emo:'💥', cost:0,   sub:'Loud. Final. Free.' },
+  { id:'crumple',  name:'Crumple & Toss',   emo:'🗑️', cost:250, sub:'Casual disrespect' },
+  { id:'sand',     name:'Dissolve to Sand', emo:'🏜️', cost:300, sub:'Ashes to ashes' },
+  { id:'dandelion',name:'Dandelion Blow',   emo:'🌬️', cost:300, sub:'A gentler goodbye' },
+  { id:'ink',      name:'Ink in Water',     emo:'🫧', cost:500, sub:'For the dramatic' }
+];
+const LEVELS = [[0,'Novice'],[150,'Word Scout'],[400,'Wordsmith'],[900,'Sage'],[1800,'Virtuoso'],[3200,'Word Legend']];
+
+let S = load();
+function load() {
+  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.words) return s; } catch(e) {}
+  return {
+    ob: false, xp: 0,
+    streak: { n: 0, last: '', fz: 1, days: {} },
+    shop: { owned: ['shatter'], eq: 'shatter', sg: 0 },
+    words: WORDS.map(() => ({ lv: 0, due: 0, seen: false })),
+    newday: { d: '', c: 0 },
+    stats: { reviews: 0, mastered: 0 }
+  };
+}
+function save() { localStorage.setItem(KEY, JSON.stringify(S)); }
+function today() { return new Date().toISOString().slice(0,10); }
+function daysBetween(a, b) { return Math.round((new Date(b) - new Date(a)) / DAY); }
+
+/* streak: check break on load */
+(function checkStreak() {
+  if (!S.streak.last) return;
+  const gap = daysBetween(S.streak.last, today());
+  if (gap > 1) {
+    if (S.streak.fz > 0) { S.streak.fz--; S.streak.last = today(); setTimeout(() => toast('🧊 A freeze saved your streak.', '#3B82F6'), 600); }
+    else S.streak.n = 0;
+    save();
+  }
+})();
+function markActive() {
+  const t = today();
+  S.streak.days[t] = 1;
+  if (S.streak.last === t) return;
+  const gap = S.streak.last ? daysBetween(S.streak.last, t) : 99;
+  S.streak.n = gap === 1 ? S.streak.n + 1 : 1;
+  S.streak.last = t;
+  save();
+}
+
+/* XP */
+function gain(base) {
+  const mult = S.streak.n >= 5 ? 1.5 : 1;
+  const add = Math.round(base * mult);
+  S.xp += add; save(); header();
+  return add;
+}
+function levelOf(xp) { let i = 0; LEVELS.forEach((l, j) => { if (xp >= l[0]) i = j; }); return i; }
+
+/* ================= UI BASICS ================= */
+const $ = s => document.querySelector(s);
+function toast(msg, color) {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.style.background = color || '#7C3AED'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.transition = 'opacity 0.3s'; t.style.opacity = 0; setTimeout(() => t.remove(), 300); }, 2700);
+}
+function header() {
+  $('#hstreak').textContent = '🔥 ' + S.streak.n;
+  $('#hxp').textContent = '⚡ ' + S.xp.toLocaleString() + ' XP';
+}
+function speak(w) { try { const u = new SpeechSynthesisUtterance(w); u.rate = 0.85; u.lang = 'en-US'; speechSynthesis.speak(u); } catch(e) {} }
+function shuffle(a) { a = a.slice(); for (let i = a.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a; }
+function seenIdx() { return S.words.map((w,i) => w.seen ? i : -1).filter(i => i >= 0); }
+
+/* ================= EFFECTS ================= */
+function particles(rect, opts) {
+  const fx = $('#fx');
+  for (let i = 0; i < opts.n; i++) {
+    const p = document.createElement('div');
+    p.className = 'p';
+    const size = opts.size[0] + Math.random() * (opts.size[1] - opts.size[0]);
+    p.style.width = p.style.height = size + 'px';
+    p.style.background = opts.colors[Math.floor(Math.random() * opts.colors.length)];
+    if (opts.square) p.style.borderRadius = '2px';
+    p.style.left = (rect.left + Math.random() * rect.width) + 'px';
+    p.style.top = (rect.top + Math.random() * rect.height) + 'px';
+    p.style.transition = `transform ${opts.dur}ms cubic-bezier(0.25,0.4,0.6,1), opacity ${opts.dur}ms ease`;
+    fx.appendChild(p);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const dx = opts.dx[0] + Math.random() * (opts.dx[1] - opts.dx[0]);
+      const dy = opts.dy[0] + Math.random() * (opts.dy[1] - opts.dy[0]);
+      p.style.transform = `translate(${dx}px, ${dy}px) rotate(${(Math.random()-0.5)*260}deg)`;
+      p.style.opacity = '0';
+    }));
+    setTimeout(() => p.remove(), opts.dur + 150);
+  }
+}
+function playEffect(name, el) {
+  const rect = el.getBoundingClientRect();
+  if (name === 'shatter') {
+    particles(rect, { n: 26, size: [6,14], square: true, colors: ['#7C3AED','#A78BFA','#EDE9FE','#DB2777'], dx: [-140,140], dy: [-160,60], dur: 900 });
+    el.classList.add('fx-fade');
+  } else if (name === 'sand') {
+    particles(rect, { n: 55, size: [3,6], colors: ['#D9A441','#C98A2D','#EACB8B'], dx: [-30,30], dy: [80,280], dur: 1100 });
+    el.classList.add('fx-fade');
+  } else if (name === 'dandelion') {
+    particles(rect, { n: 32, size: [4,7], colors: ['#FFFFFF','#F3F4F6','#E5E7EB'], dx: [40,200], dy: [-220,-60], dur: 1400 });
+    el.classList.add('fx-fade');
+  } else if (name === 'crumple') {
+    el.classList.add('fx-crumple');
+  } else if (name === 'ink') {
+    particles(rect, { n: 18, size: [10,26], colors: ['rgba(30,27,75,0.5)','rgba(124,58,237,0.4)'], dx: [-60,60], dy: [-60,60], dur: 1000 });
+    el.classList.add('fx-ink');
+  } else {
+    el.classList.add('fx-slide');
+  }
+}
+
+/* ================= NAV ================= */
+function go(tab) {
+  document.querySelectorAll('.nv').forEach(n => n.classList.toggle('on', n.dataset.t === tab));
+  if (tab === 'learn') renderLearn();
+  if (tab === 'games') renderGames();
+  if (tab === 'prog') renderProg();
+  if (tab === 'shop') renderShop();
+}
+
+/* ================= LEARN ================= */
+let queue = [], qPos = 0, sessionN = 0;
+function buildQueue() {
+  const now = Date.now(), t = today();
+  if (S.newday.d !== t) { S.newday = { d: t, c: 0 }; save(); }
+  const due = S.words.map((w,i) => (w.seen && w.lv < 5 && w.due <= now) ? i : -1).filter(i => i >= 0);
+  const fresh = [];
+  if (S.newday.c < NEW_PER_DAY) {
+    S.words.forEach((w,i) => { if (!w.seen && fresh.length < NEW_PER_DAY - S.newday.c) fresh.push(i); });
+  }
+  queue = shuffle(due).concat(fresh);
+  qPos = 0; sessionN = queue.length;
+}
+function renderLearn() {
+  buildQueue();
+  if (!queue.length) {
+    $('#view').innerHTML = `
+      <div class="card" style="text-align:center;padding:36px 20px">
+        <div style="font-size:52px;margin-bottom:10px">🗡️</div>
+        <div style="font-size:18px;font-weight:900;margin-bottom:6px">Nothing to hunt right now.</div>
+        <div class="hint">Words return when they're about to slip.<br>Come back later, or hit the Games.</div>
+        <button class="bigbtn ghost" style="margin-top:16px" onclick="go('games')">Play a game →</button>
+      </div>
+      ${statsCard()}`;
+    return;
+  }
+  showCard();
+}
+function statsCard() {
+  const seen = seenIdx().length, mastered = S.words.filter(w => w.lv === 5).length;
+  return `<div class="card"><h4>📈 So far</h4>
+    <div class="xprow"><span>Words met</span><strong>${seen} / ${WORDS.length}</strong></div>
+    <div class="xprow"><span>Words mastered</span><strong>${mastered}</strong></div>
+    <div class="xprow"><span>Reviews done</span><strong>${S.stats.reviews}</strong></div></div>`;
+}
+function showCard() {
+  if (qPos >= queue.length) { renderLearnDone(); return; }
+  const i = queue[qPos], d = W(i), st = S.words[i];
+  const dots = [1,2,3,4,5].map(n => `<div class="dot ${n <= st.lv ? 'f' : ''}"></div>`).join('');
+  $('#view').innerHTML = `
+    <div>
+      <div class="pbar"><div style="width:${Math.round(qPos/sessionN*100)}%"></div></div>
+      <div class="pmeta"><span>Word ${qPos+1} of ${sessionN}</span><span>${st.seen ? 'review' : 'new word'}</span></div>
+    </div>
+    <div class="pronun">
+      <span class="lbl">Sounds like</span>
+      <span class="txt">${d.pron}</span>
+      <button class="spk" onclick="speak('${d.w}')">🔊</button>
+    </div>
+    <div class="fcwrap" id="fcwrap">
+      <div class="fc" id="fc" onclick="this.classList.toggle('flip')">
+        <div class="face front">
+          <div class="emoji">${d.emo}</div>
+          <div class="word">${d.w.toUpperCase()}</div>
+          <div class="pos">${d.pos}</div>
+          <div class="taphint">tap to reveal →</div>
+        </div>
+        <div class="face back">
+          <div>
+            <div class="bword">${d.w.toUpperCase()} <span class="bpos">${d.pos}</span></div>
+            <div class="bdef">${d.def}</div>
+            <button class="hookbtn" onclick="event.stopPropagation();const h=this.nextElementSibling;const o=h.style.display!=='none';h.style.display=o?'none':'block';this.textContent=o?'🔑 Memory hook':'🔑 Hide hook'">🔑 Memory hook</button>
+            <div class="hook" style="display:none">${d.hook}</div>
+          </div>
+          <div>
+            <div class="sent">"${d.sent}"</div>
+            <div class="dots">${dots}</div>
+          </div>
+          <div class="rrow">
+            <button class="rbtn r-again" onclick="event.stopPropagation();rate(${i},0)"><span class="t">😬 Again</span><span class="s">minutes</span></button>
+            <button class="rbtn r-hard" onclick="event.stopPropagation();rate(${i},1)"><span class="t">🤔 Hard</span><span class="s">hours</span></button>
+            <button class="rbtn r-easy" onclick="event.stopPropagation();rate(${i},2)"><span class="t">😎 Easy</span><span class="s">${st.lv >= 4 ? 'master it' : 'gap doubles'}</span></button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+function rate(i, r) {
+  const st = S.words[i], now = Date.now(), wasNew = !st.seen;
+  st.seen = true;
+  if (wasNew) S.newday.c++;
+  S.stats.reviews++;
+  let msg, color, effect = null;
+  if (r === 0) {
+    st.lv = Math.max(0, st.lv - 1); st.due = now + MIN;
+    msg = 'Back in a bit. It knows you blinked. 🔁 +' + gain(5) + ' XP'; color = '#EF4444';
+  } else if (r === 1) {
+    st.due = now + 4*HOUR;
+    msg = 'Soon. Come armed. 📅 +' + gain(5) + ' XP'; color = '#F59E0B';
+  } else {
+    st.lv++;
+    if (st.lv >= 5) {
+      st.lv = 5; st.due = now + 30*DAY; S.stats.mastered++;
+      msg = '⭐ MASTERED. +' + (gain(5) + gain(25) + gain(100)) + ' XP'; color = '#7C3AED';
+    } else {
+      st.due = now + LADDER[st.lv - 1];
+      msg = 'A dot fills. It fears you now. 😎 +' + (gain(5) + gain(25)) + ' XP'; color = '#10B981';
+    }
+    effect = S.shop.eq;
+  }
+  markActive(); save(); header();
+  toast(msg, color);
+  const fc = $('#fc');
+  playEffect(effect || 'slide', fc);
+  setTimeout(() => { qPos++; showCard(); }, effect ? 950 : 380);
+}
+function renderLearnDone() {
+  $('#view').innerHTML = `
+    <div class="card" style="text-align:center;padding:36px 20px">
+      <div style="font-size:52px;margin-bottom:10px">🏆</div>
+      <div style="font-size:18px;font-weight:900;margin-bottom:6px">Session cleared.</div>
+      <div class="hint">Every word in there took damage today.</div>
+      <button class="bigbtn" style="margin-top:16px" onclick="go('games')">Finish them in a game →</button>
+    </div>
+    ${statsCard()}`;
+}
+
+/* ================= GAMES HUB ================= */
+function renderGames() {
+  const n = seenIdx().length;
+  const need = k => n >= k ? '' : `Meet ${k - n} more words first`;
+  $('#view').innerHTML = `
+    <button class="gcard ${n<4?'locked':''}" ${n<4?'disabled':''} onclick="startQuiz()">
+      <span class="gi" style="background:var(--pink-light)">🎯</span>
+      <span><span class="gt">Quiz</span><div class="gs">${need(4) || '4 choices. +10 each.'}</div></span>
+    </button>
+    <button class="gcard ${n<5?'locked':''}" ${n<5?'disabled':''} onclick="startMatch()">
+      <span class="gi" style="background:var(--tiffany-light)">🧩</span>
+      <span><span class="gt">Match</span><div class="gs">${need(5) || '5 pairs. Clear under 45s: +25 bonus.'}</div></span>
+    </button>
+    <button class="gcard ${n<5?'locked':''}" ${n<5?'disabled':''} onclick="startBlitz()">
+      <span class="gi" style="background:#E0E7FF">⚡</span>
+      <span><span class="gt">Blitz</span><div class="gs">${need(5) || '8 seconds a word. +30 each.'}</div></span>
+    </button>
+    <div class="gcard locked">
+      <span class="gi" style="background:var(--purple-light)">🐉</span>
+      <span><span class="gt">Boss Battle</span><div class="gs">Coming soon. Bring an ally: first co-op win pays +1,000 XP.</div></span>
+    </div>`;
+}
+
+/* ================= QUIZ ================= */
+let qz = null;
+function startQuiz() {
+  const pool = shuffle(seenIdx()).slice(0, 8);
+  qz = { list: pool, at: 0, right: 0, sgUsed: false };
+  quizQ();
+}
+function quizQ() {
+  if (qz.at >= qz.list.length) {
+    $('#view').innerHTML = `
+      <div class="card" style="text-align:center;padding:32px 20px">
+        <div style="font-size:48px;margin-bottom:8px">🎯</div>
+        <div style="font-size:18px;font-weight:900">${qz.right} / ${qz.list.length}</div>
+        <div class="hint" style="margin-top:4px">${qz.right === qz.list.length ? 'Flawless. The words are talking about you.' : 'The missed ones will be back. So will you.'}</div>
+        <button class="bigbtn" style="margin-top:16px" onclick="startQuiz()">Again →</button>
+        <button class="bigbtn ghost" style="margin-top:8px" onclick="go('games')">Games</button>
+      </div>`;
+    return;
+  }
+  const i = qz.list[qz.at], d = W(i);
+  const wrong = shuffle(seenIdx().concat(S.words.map((w,j)=>j)).filter(j => j !== i)).slice(0, 3);
+  const choices = shuffle([{ j: i, ok: true }].concat(wrong.map(j => ({ j, ok: false }))));
+  qz.sgAvail = S.shop.sg > 0;
+  $('#view').innerHTML = `
+    <div>
+      <div class="pbar"><div style="width:${Math.round(qz.at/qz.list.length*100)}%"></div></div>
+      <div class="pmeta"><span>Question ${qz.at+1} of ${qz.list.length}</span><span>+10 XP per correct</span></div>
+    </div>
+    <div class="qbox">
+      <div class="qword">${d.w.toUpperCase()}</div>
+      <div class="qpron">${d.pron} <button class="spk" style="color:white;background:rgba(255,255,255,0.15);border-radius:6px" onclick="speak('${d.w}')">🔊</button></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px" id="qcs">
+      ${choices.map((c, k) => `<button class="qc" data-ok="${c.ok}" onclick="qPick(this)"><span class="ql">${'ABCD'[k]}</span>${W(c.j).def}</button>`).join('')}
+    </div>
+    ${qz.sgAvail ? '<div class="hint" style="text-align:center">🎯 Second Guess armed: one wrong answer forgiven</div>' : ''}`;
+}
+let qLock = false;
+function qPick(el) {
+  if (qLock) return;
+  const ok = el.dataset.ok === 'true';
+  if (ok) {
+    qLock = true;
+    el.classList.add('ok');
+    qz.right++;
+    markActive();
+    toast('One down. +' + gain(10) + ' XP 🗡️', '#10B981');
+    setTimeout(() => { qLock = false; qz.at++; quizQ(); }, 900);
+  } else {
+    if (qz.sgAvail && !qz.sgUsed) {
+      qz.sgUsed = true; qz.sgAvail = false; S.shop.sg--; save();
+      el.classList.add('no'); el.disabled = true;
+      toast('Second Guess used. Pick again. 🎯', '#F59E0B');
+      return;
+    }
+    qLock = true;
+    el.classList.add('no');
+    document.querySelectorAll('#qcs .qc').forEach(c => { if (c.dataset.ok === 'true') c.classList.add('ok'); });
+    toast('Wrong. It comes back until you know it. 😤', '#F59E0B');
+    setTimeout(() => { qLock = false; qz.at++; qz.sgUsed = false; qz.sgAvail = S.shop.sg > 0; quizQ(); }, 1400);
+  }
+}
+
+/* ================= MATCH ================= */
+let mz = null;
+function startMatch() {
+  const pool = shuffle(seenIdx()).slice(0, 5);
+  mz = { pool, done: 0, sel: null, t: 0, timer: null };
+  const words = shuffle(pool), defs = shuffle(pool);
+  $('#view').innerHTML = `
+    <div class="mhead">
+      <span>⚡ Clear under 45s: +25 bonus</span>
+      <span>⏱ <strong id="mtimer">0:00</strong> · <strong id="mc">0</strong>/5</span>
+    </div>
+    <div class="mcols">
+      <div class="mcol">${words.map(i => `<button class="mt w" data-i="${i}" onclick="mTap(this)">${W(i).w.toUpperCase()}</button>`).join('')}</div>
+      <div class="mcol">${defs.map(i => `<button class="mt" data-i="${i}" onclick="mTap(this)">${W(i).def}</button>`).join('')}</div>
+    </div>`;
+  mz.timer = setInterval(() => {
+    mz.t++;
+    const el = $('#mtimer');
+    if (el) el.textContent = Math.floor(mz.t/60) + ':' + String(mz.t%60).padStart(2,'0');
+    else clearInterval(mz.timer);
+  }, 1000);
+}
+function mTap(el) {
+  if (el.classList.contains('done')) return;
+  if (!mz.sel) { mz.sel = el; el.classList.add('sel'); return; }
+  if (mz.sel === el) { el.classList.remove('sel'); mz.sel = null; return; }
+  if (mz.sel.dataset.i === el.dataset.i && mz.sel !== el && mz.sel.classList.contains('w') !== el.classList.contains('w')) {
+    mz.sel.classList.remove('sel'); mz.sel.classList.add('done'); el.classList.add('done');
+    mz.done++; $('#mc').textContent = mz.done;
+    markActive();
+    if (mz.done === 5) {
+      clearInterval(mz.timer);
+      const fast = mz.t <= 45;
+      const total = gain(10) + (fast ? gain(25) : 0);
+      toast(fast ? `Board cleared in ${mz.t}s. +${total} XP ⚡` : `Board cleared. +${total} XP ✅`, '#0D9488');
+      setTimeout(() => go('games'), 1600);
+    } else {
+      toast('Pair down. +' + gain(10) + ' XP ✅', '#10B981');
+    }
+    mz.sel = null;
+  } else {
+    const prev = mz.sel;
+    prev.classList.add('shake'); el.classList.add('shake');
+    setTimeout(() => { prev.classList.remove('sel','shake'); el.classList.remove('shake'); }, 400);
+    mz.sel = null;
+  }
+}
+
+/* ================= BLITZ ================= */
+let bz = null;
+function startBlitz() {
+  const pool = shuffle(seenIdx()).slice(0, Math.min(8, seenIdx().length));
+  $('#view').innerHTML = `
+    <div class="bz">
+      <div style="font-size:40px;margin-bottom:6px">⚡</div>
+      <div style="font-size:20px;font-weight:900;margin-bottom:4px">Blitz</div>
+      <div style="font-size:13px;opacity:0.8;line-height:1.5">${pool.length} words. 8 seconds each.<br>Type the first 3 letters of the word that fits.</div>
+      <button class="boostbtn" id="boostbtn" onclick="bBoost(this)">⚡ Blitz Boost · 50 XP · OFF</button>
+      <button class="bigbtn" style="margin-top:14px;background:var(--yellow);color:#1E1B4B" onclick="bRun(${JSON.stringify(pool).replace(/"/g,'')})">Start →</button>
+    </div>`;
+  bz = { boost: false };
+}
+function bBoost(el) {
+  if (!bz.boost && S.xp < 50) { toast('Not enough XP. Go slay something. ⚡', '#EF4444'); return; }
+  bz.boost = !bz.boost;
+  el.classList.toggle('on', bz.boost);
+  el.textContent = '⚡ Blitz Boost · 50 XP · ' + (bz.boost ? 'ON' : 'OFF');
+  toast(bz.boost ? 'Boost on. Perfect round pays double. ⚡' : 'Boost off. Standard XP. 🐢', bz.boost ? '#F59E0B' : '#6B7280');
+}
+function bRun(pool) {
+  if (bz.boost) { S.xp -= 50; save(); header(); }
+  bz = { pool, at: 0, hits: 0, results: [], boost: bz.boost, left: 8, iv: null };
+  bQ();
+}
+function bQ() {
+  if (bz.at >= bz.pool.length) { bEnd(); return; }
+  const i = bz.pool[bz.at], d = W(i);
+  bz.left = 8;
+  $('#view').innerHTML = `
+    <div class="bz">
+      <div class="ring">
+        <svg width="64" height="64" viewBox="0 0 64 64">
+          <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="5"/>
+          <circle id="barc" cx="32" cy="32" r="26" fill="none" stroke="#F59E0B" stroke-width="5" stroke-dasharray="163.4" stroke-dashoffset="0" stroke-linecap="round"/>
+        </svg>
+        <div class="rn" id="bnum">8</div>
+      </div>
+      <div class="bdef2">"${d.def}"</div>
+      <div class="bhint">starts with "${d.w[0].toUpperCase()}" · ${d.w.length} letters</div>
+      <input id="bin" maxlength="3" autocomplete="off" autocapitalize="off" placeholder="first 3 letters..." oninput="bCheck(this, '${d.w}')">
+      <div class="bdots">${bz.pool.map((_, k) => `<div class="bd ${k < bz.results.length ? (bz.results[k] ? 'hit' : 'miss') : ''}"></div>`).join('')}</div>
+    </div>`;
+  $('#bin').focus();
+  clearInterval(bz.iv);
+  bz.iv = setInterval(() => {
+    bz.left--;
+    const n = $('#bnum'), arc = $('#barc');
+    if (!n) { clearInterval(bz.iv); return; }
+    n.textContent = bz.left;
+    arc.setAttribute('stroke-dashoffset', 163.4 * (1 - bz.left/8));
+    arc.setAttribute('stroke', bz.left <= 2 ? '#EF4444' : '#F59E0B');
+    if (bz.left <= 0) { clearInterval(bz.iv); bMiss(); }
+  }, 1000);
+}
+function bCheck(inp, word) {
+  if (inp.value.length < 3) return;
+  if (word.toLowerCase().startsWith(inp.value.toLowerCase())) {
+    clearInterval(bz.iv);
+    inp.style.borderColor = '#10B981';
+    bz.hits++; bz.results.push(true);
+    markActive();
+    toast('It never saw you coming. +' + gain(30) + ' XP ⚡', '#F59E0B');
+    setTimeout(() => { bz.at++; bQ(); }, 500);
+  } else {
+    clearInterval(bz.iv);
+    inp.style.borderColor = '#EF4444';
+    bMiss(word);
+  }
+}
+function bMiss(word) {
+  bz.results.push(false);
+  const i = bz.pool[bz.at];
+  toast('It was "' + W(i).w + '". It lives, for now. 🗡️', '#EF4444');
+  setTimeout(() => { bz.at++; bQ(); }, 1100);
+}
+function bEnd() {
+  clearInterval(bz.iv);
+  const perfect = bz.hits === bz.pool.length;
+  let bonus = 0;
+  if (perfect) {
+    bonus = gain(50);
+    if (bz.boost) bonus += gain(bz.hits * 30 + 50);
+  }
+  $('#view').innerHTML = `
+    <div class="card" style="text-align:center;padding:32px 20px">
+      <div style="font-size:48px;margin-bottom:8px">${perfect ? '👑' : '⚡'}</div>
+      <div style="font-size:18px;font-weight:900">${bz.hits} / ${bz.pool.length}</div>
+      <div class="hint" style="margin-top:4px">
+        ${perfect ? 'Perfect round. +' + bonus + ' bonus XP.' + (bz.boost ? ' Boost paid off. ⚡' : '') : (bz.boost ? 'The boost is spent. The words noticed. 🐢' : 'The survivors will remember this.')}
+      </div>
+      <button class="bigbtn" style="margin-top:16px" onclick="startBlitz()">Again →</button>
+      <button class="bigbtn ghost" style="margin-top:8px" onclick="go('games')">Games</button>
+    </div>`;
+}
+
+/* ================= PROGRESS ================= */
+function renderProg() {
+  const lv = levelOf(S.xp);
+  const next = LEVELS[lv+1];
+  const pct = next ? Math.min(100, Math.round((S.xp - LEVELS[lv][0]) / (next[0] - LEVELS[lv][0]) * 100)) : 100;
+  const dnames = ['M','T','W','Th','F','Sa','Su'];
+  const now = new Date();
+  const mon = new Date(now); mon.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+  let week = '';
+  for (let k = 0; k < 7; k++) {
+    const d = new Date(mon); d.setDate(mon.getDate() + k);
+    const ds = d.toISOString().slice(0,10);
+    const isToday = ds === today();
+    const done = S.streak.days[ds];
+    week += `<div class="sday"><div class="dl">${dnames[k]}</div><div class="di ${isToday && done ? 'today' : done ? 'done' : ''}">${done ? '🔥' : '○'}</div></div>`;
+  }
+  const learned = S.words.map((w,i) => ({ i, lv: w.lv, seen: w.seen })).filter(x => x.seen).sort((a,b) => b.lv - a.lv).slice(0, 12);
+  const stages = ['New','Learning','Familiar','Strong','Almost','Mastered ⭐'];
+  const scol = ['var(--red)','var(--yellow)','#60A5FA','var(--green)','var(--teal)','var(--purple)'];
+  $('#view').innerHTML = `
+    <div class="card">
+      <h4>⚡ XP & Level</h4>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span class="lvlbadge">Lv. ${lv+1}</span>
+        <span style="font-size:12px;font-weight:600;color:var(--text-soft)">${LEVELS[lv][1]}</span>
+      </div>
+      <div class="pbar" style="height:9px"><div style="width:${pct}%"></div></div>
+      <div class="hint" style="margin-top:5px">${next ? S.xp.toLocaleString() + ' / ' + next[0].toLocaleString() + ' XP to ' + next[1] : 'Top level. The dictionary is nervous.'}</div>
+    </div>
+    <div class="card">
+      <h4>🔥 Streak</h4>
+      <div class="sdays">${week}</div>
+      <div style="text-align:center;font-size:12px;color:var(--text-soft)"><strong style="font-size:26px;font-weight:900;color:var(--yellow);display:block">${S.streak.n}</strong>day streak</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--blue-light);border-radius:10px;padding:9px 12px;margin-top:10px">
+        <span style="font-size:12px;font-weight:600;color:#1D4ED8">🧊 Freezes: <strong>${S.streak.fz}</strong></span>
+        <span style="font-size:11px;color:#1D4ED8">miss a day, one auto-spends</span>
+      </div>
+    </div>
+    <div class="card">
+      <h4>⭐ Your words</h4>
+      ${learned.length ? learned.map(x => `
+        <div class="mrow">
+          <div class="mw">${W(x.i).w}</div>
+          <div class="dots" style="flex:1;margin:0">${[1,2,3,4,5].map(n => `<div class="dot" style="flex:1;${n <= x.lv ? 'background:' + scol[x.lv] : ''}"></div>`).join('')}</div>
+          <div class="ml" style="color:${scol[x.lv]}">${stages[x.lv]}</div>
+        </div>`).join('') : '<div class="hint">No words met yet. Go learn.</div>'}
+    </div>
+    ${statsCard()}`;
+}
+
+/* ================= SHOP ================= */
+function renderShop() {
+  $('#view').innerHTML = `
+    <div class="bal"><span>Your balance</span><strong>⚡ <span id="sxp">${S.xp.toLocaleString()}</span> XP</strong></div>
+    <div class="hint" style="text-align:center;margin-top:-4px">XP only. Earned by studying, never bought with money.</div>
+    <div class="card">
+      <h4>🧊 Power-ups</h4>
+      <div class="srow">
+        <span class="se">🧊</span>
+        <span class="si"><span class="sn">Streak Freeze</span><div class="ss">Miss a day, keep the fire · you have ${S.streak.fz}</div></span>
+        <button class="sbtn" onclick="buyFreeze()">200 XP</button>
+      </div>
+      <div class="srow">
+        <span class="se">🎯</span>
+        <span class="si"><span class="sn">Second Guess</span><div class="ss">One wrong quiz answer forgiven · you have ${S.shop.sg}</div></span>
+        <button class="sbtn" onclick="buySG()">150 XP</button>
+      </div>
+    </div>
+    <div class="card">
+      <h4>💀 How words die</h4>
+      <div class="hint" style="margin:-4px 0 8px">Pick the send-off a beaten word gets.</div>
+      ${ANIMS.map(a => {
+        const owned = S.shop.owned.includes(a.id), eq = S.shop.eq === a.id;
+        return `<div class="srow">
+          <span class="se">${a.emo}</span>
+          <span class="si"><span class="sn">${a.name}</span><div class="ss">${a.sub}</div></span>
+          <button class="sbtn ${eq ? 'eq' : owned ? 'owned' : ''}" onclick="buyAnim('${a.id}')">${eq ? 'Equipped' : owned ? 'Equip' : a.cost + ' XP'}</button>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+function spend(cost) {
+  if (S.xp < cost) { toast('Not enough XP. Go slay something. ⚡', '#EF4444'); return false; }
+  S.xp -= cost; save(); header(); return true;
+}
+function buyFreeze() { if (!spend(200)) return; S.streak.fz++; save(); toast('🧊 Freeze banked. The fire survives one lazy day.', '#3B82F6'); renderShop(); }
+function buySG() { if (!spend(150)) return; S.shop.sg++; save(); toast('Second Guess banked. Use it wisely. 🎯', '#10B981'); renderShop(); }
+function buyAnim(id) {
+  const a = ANIMS.find(x => x.id === id);
+  if (S.shop.eq === id) return;
+  if (S.shop.owned.includes(id)) {
+    S.shop.eq = id; save();
+    toast('Words now die by ' + a.name.toLowerCase() + '. 💀', '#7C3AED');
+  } else {
+    if (!spend(a.cost)) return;
+    S.shop.owned.push(id); S.shop.eq = id; save();
+    toast('Yours, and equipped. -' + a.cost + ' XP 🛍️', '#0D9488');
+  }
+  renderShop();
+}
+
+/* ================= ONBOARDING ================= */
+let obAt = 0;
+const OB_N = 4;
+function obNav(dir) {
+  obAt = Math.max(0, Math.min(OB_N - 1, obAt + dir));
+  $('#obtrack').style.transform = `translateX(-${obAt * 100}%)`;
+  document.querySelectorAll('.obdot').forEach((d,i) => d.classList.toggle('on', i === obAt));
+  $('#obback').style.visibility = obAt === 0 ? 'hidden' : 'visible';
+  $('#obnext').style.display = obAt === OB_N - 1 ? 'none' : 'block';
+}
+function finishOb() {
+  S.ob = true; save();
+  $('#ob').hidden = true;
+  $('#appwrap').hidden = false;
+  header(); go('learn');
+  toast("First word's waiting. 🗡️", '#7C3AED');
+}
+(function initOb() {
+  const stages = [['Day 0',1,'New','var(--red)'],['Day 1',2,'Learning','var(--yellow)'],['Day 2',3,'Familiar','#60A5FA'],['Day 4',4,'Strong','var(--green)'],['Day 8',5,'Mastered ⭐','var(--purple)']];
+  $('#obladder').innerHTML = stages.map(s => `
+    <div class="lrow"><div class="ld">${s[0]}</div><div class="lp">${[1,2,3,4,5].map(n => `<i style="${n <= s[1] ? 'background:' + s[3] : ''}"></i>`).join('')}</div><div class="ll" style="color:${s[3]}">${s[2]}</div></div>`).join('');
+  $('#obdots').innerHTML = Array.from({length: OB_N}, (_, i) => `<div class="obdot ${i === 0 ? 'on' : ''}"></div>`).join('');
+})();
+
+/* ================= BOOT ================= */
+if (S.ob) { $('#appwrap').hidden = false; header(); go('learn'); }
+else { $('#ob').hidden = false; }
+</script>
+</body>
+</html>
