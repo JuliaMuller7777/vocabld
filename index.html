@@ -343,7 +343,7 @@
       <div class="sub">Three buttons. Your honest answer sets when this word comes back.</div>
       <div class="rcard" style="background:var(--red-light)"><span class="re">😬</span><div><div class="rt" style="color:var(--red)">Again · minutes</div><div class="rs" style="color:#991B1B">Blanked. It comes back this session. A dot empties.</div></div></div>
       <div class="rcard" style="background:var(--yellow-light)"><span class="re">🤔</span><div><div class="rt" style="color:#92400E">Hard · hours</div><div class="rs" style="color:#92400E">Almost. Back soon. No dot.</div></div></div>
-      <div class="rcard" style="background:var(--green-light)"><span class="re">😎</span><div><div class="rt" style="color:#065F46">Easy · the gap doubles</div><div class="rs" style="color:#065F46">Nailed it. A dot fills. The word dies a little.</div></div></div>
+      <div class="rcard" style="background:var(--green-light)"><span class="re">😎</span><div><div class="rt" style="color:#065F46">Easy · the gap doubles</div><div class="rs" style="color:#065F46">Nailed it. A dot fills. The gap doubles.</div></div></div>
     </div>
     <div class="obs">
       <div class="big">⚡</div>
@@ -583,11 +583,12 @@ function go(tab) {
 let queue = [], qPos = 0, sessionN = 0;
 function buildQueue() {
   const now = Date.now(), t = today();
-  if (S.newday.d !== t) { S.newday = { d: t, c: 0 }; save(); }
+  if (S.newday.d !== t) { S.newday = { d: t, c: 0, cap: NEW_PER_DAY }; save(); }
+  const cap = S.newday.cap || NEW_PER_DAY;
   const due = S.words.map((w,i) => (w.seen && w.lv < 5 && w.due <= now) ? i : -1).filter(i => i >= 0);
   const fresh = [];
-  if (S.newday.c < NEW_PER_DAY) {
-    S.words.forEach((w,i) => { if (!w.seen && fresh.length < NEW_PER_DAY - S.newday.c) fresh.push(i); });
+  if (S.newday.c < cap) {
+    S.words.forEach((w,i) => { if (!w.seen && fresh.length < cap - S.newday.c) fresh.push(i); });
   }
   queue = shuffle(due).concat(fresh);
   qPos = 0; sessionN = queue.length;
@@ -595,24 +596,42 @@ function buildQueue() {
 function renderLearn() {
   buildQueue();
   if (!queue.length) {
+    const unseen = S.words.some(w => !w.seen);
     $('#view').innerHTML = `
       <div class="card" style="text-align:center;padding:36px 20px">
         <div style="font-size:52px;margin-bottom:10px">🗡️</div>
         <div style="font-size:18px;font-weight:900;margin-bottom:6px">Nothing to hunt right now.</div>
-        <div class="hint">Words return when they're about to slip.<br>Come back later, or hit the Games.</div>
-        <button class="bigbtn ghost" style="margin-top:16px" onclick="go('games')">Play a game →</button>
+        <div class="hint">Words come back when they're about to slip.<br>${nextDueText()}</div>
+        ${unseen ? '<button class="bigbtn" style="margin-top:16px" onclick="summonMore()">Summon 10 new words →</button>' : ''}
+        <button class="bigbtn ghost" style="margin-top:${unseen ? '8px' : '16px'}" onclick="go('games')">Play a game →</button>
       </div>
       ${statsCard()}`;
     return;
   }
   showCard();
 }
+const APP_V = '1.2';
+function nextDueText() {
+  const now = Date.now();
+  const dues = S.words.filter(w => w.seen && w.lv < 5 && w.due > now).map(w => w.due);
+  if (!dues.length) return 'Summon new ones below.';
+  const mins = Math.max(1, Math.round((Math.min(...dues) - now) / 60000));
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return 'Next review in ' + (h ? h + 'h ' : '') + m + 'm.';
+}
+function summonMore() {
+  S.newday.cap = (S.newday.cap || NEW_PER_DAY) + 10;
+  save();
+  toast('10 fresh words step up. 🗡️', '#7C3AED');
+  renderLearn();
+}
 function statsCard() {
   const seen = seenIdx().length, mastered = S.words.filter(w => w.lv === 5).length;
   return `<div class="card"><h4>📈 So far</h4>
     <div class="xprow"><span>Words met</span><strong>${seen} / ${WORDS.length}</strong></div>
     <div class="xprow"><span>Words mastered</span><strong>${mastered}</strong></div>
-    <div class="xprow"><span>Reviews done</span><strong>${S.stats.reviews}</strong></div></div>`;
+    <div class="xprow"><span>Reviews done</span><strong>${S.stats.reviews}</strong></div>
+    <div class="xprow"><span>App version</span><strong>${APP_V}</strong></div></div>`;
 }
 function showCard() {
   if (qPos >= queue.length) { renderLearnDone(); return; }
@@ -692,6 +711,7 @@ function renderLearnDone() {
       <div style="font-size:18px;font-weight:900;margin-bottom:6px">Session cleared.</div>
       <div class="hint">Every word in there took damage today.</div>
       <button class="bigbtn" style="margin-top:16px" onclick="go('games')">Finish them in a game →</button>
+      ${S.words.some(w => !w.seen) ? '<button class="bigbtn ghost" style="margin-top:8px" onclick="summonMore()">Summon 10 more words →</button>' : ''}
     </div>
     ${statsCard()}`;
 }
@@ -996,8 +1016,8 @@ function renderShop() {
       </div>
     </div>
     <div class="card">
-      <h4>💀 How words die</h4>
-      <div class="hint" style="margin:-4px 0 8px">Pick the send-off a beaten word gets.</div>
+      <h4>💥 Victory send-offs</h4>
+      <div class="hint" style="margin:-4px 0 8px">The animation that plays when you beat a word (rate it Easy). Pick your favorite.</div>
       ${ANIMS.map(a => {
         const owned = S.shop.owned.includes(a.id), eq = S.shop.eq === a.id;
         return `<div class="srow">
@@ -1019,7 +1039,7 @@ function buyAnim(id) {
   if (S.shop.eq === id) return;
   if (S.shop.owned.includes(id)) {
     S.shop.eq = id; save();
-    toast('Words now die by ' + a.name.toLowerCase() + '. 💀', '#7C3AED');
+    toast(a.name + ' equipped. Plays when you beat a word. 💥', '#7C3AED');
   } else {
     if (!spend(a.cost)) return;
     S.shop.owned.push(id); S.shop.eq = id; save();
