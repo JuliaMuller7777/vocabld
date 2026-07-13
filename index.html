@@ -199,7 +199,7 @@
   .bz input:focus { border-color: var(--yellow); }
   .bdots { display: flex; gap: 5px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
   .bd { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.2); }
-  .bd.hit { background: var(--yellow); }
+  .bd.hit { background: var(--green); }
   .bd.miss { background: var(--red); }
   .boostbtn {
     margin-top: 12px; background: rgba(255,255,255,0.1);
@@ -515,7 +515,7 @@ function toast(msg, color) {
   const t = document.createElement('div');
   t.className = 'toast'; t.style.background = color || '#7C3AED'; t.textContent = msg;
   document.body.appendChild(t);
-  setTimeout(() => { t.style.transition = 'opacity 0.3s'; t.style.opacity = 0; setTimeout(() => t.remove(), 300); }, 2700);
+  setTimeout(() => { t.style.transition = 'opacity 0.3s'; t.style.opacity = 0; setTimeout(() => t.remove(), 300); }, 4050);
 }
 function header() {
   $('#hstreak').textContent = '🔥 ' + S.streak.n;
@@ -1224,33 +1224,55 @@ function waveRun(ctx, lines, done) {
       done(); return;
     }
     const waterTop = (C.top + C.h) - level * (C.h + 60);
-    const surf = x => waterTop + 6 * Math.sin(x * 0.05 + t * 2.4) + 3 * Math.sin(x * 0.11 - t * 3.1);
+    const surf = x => waterTop + 9 * Math.sin(x * 0.045 + t * 2.4) + 4 * Math.sin(x * 0.11 - t * 3.1);
     ctx.globalCompositeOperation = 'source-over';
     ctx.clearRect(0, 0, 300, 320);
     drawNote(ctx, showText ? lines : [], false);
+    // spray above the waterline
+    if (level > 0.02) {
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      for (let k = 0; k < 26; k++) {
+        const x = C.left + ((k * 37 + t * 30) % C.w);
+        const y = surf(x) - 4 - 15 * Math.abs(Math.sin(k * 2.1 + t * 1.7));
+        const r = 0.8 + 1.7 * Math.abs(Math.sin(k * 3.3 + t * 2.2));
+        if (y > C.top - 6) { ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); }
+      }
+    }
+    // water body
     ctx.save();
     ctx.beginPath();
     ctx.moveTo(C.left - 4, 324);
     for (let x = C.left - 4; x <= C.left + C.w + 4; x += 4) ctx.lineTo(x, surf(x));
     ctx.lineTo(C.left + C.w + 4, 324);
     ctx.closePath();
-    const wg = ctx.createLinearGradient(0, waterTop, 0, 320);
-    wg.addColorStop(0, 'rgba(94,222,214,0.9)');
-    wg.addColorStop(0.35, 'rgba(10,186,181,0.88)');
-    wg.addColorStop(1, 'rgba(14,116,144,0.95)');
+    const wg = ctx.createLinearGradient(0, waterTop, 0, 324);
+    wg.addColorStop(0, 'rgba(126,234,223,0.95)');
+    wg.addColorStop(0.3, 'rgba(10,186,181,0.95)');
+    wg.addColorStop(0.7, 'rgba(13,116,144,0.96)');
+    wg.addColorStop(1, 'rgba(8,74,110,0.97)');
     ctx.fillStyle = wg; ctx.fill();
     ctx.clip();
-    ctx.fillStyle = 'rgba(255,255,255,0.75)';
-    for (let x = C.left; x <= C.left + C.w; x += 10) {
-      const r = 1.4 + 1.4 * Math.abs(Math.sin(x * 0.7 + t * 3));
-      ctx.beginPath(); ctx.arc(x, surf(x) + 3, r, 0, 7); ctx.fill();
+    // lighter wave band just under the surface
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let x = C.left - 4; x <= C.left + C.w + 4; x += 4) {
+      const y = surf(x) + 13 + 3 * Math.sin(x * 0.08 + t * 1.8);
+      if (x === C.left - 4) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.stroke();
+    // foam clusters riding the surface
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    for (let x = C.left; x <= C.left + C.w; x += 7) {
+      const r = 1.5 + 2.6 * Math.abs(Math.sin(x * 0.6 + t * 3));
+      ctx.beginPath(); ctx.arc(x, surf(x) + 2, r, 0, 7); ctx.fill();
+    }
+    // rising bubbles
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
     for (const b of bubbles) {
       const bx = C.left + b.x * C.w + 4 * Math.sin(t * 1.5 + b.ph);
       const span = Math.max(30, 320 - waterTop);
       const by = 320 - ((t * b.sp + b.ph * 40) % span);
-      if (by > waterTop + 8) { ctx.beginPath(); ctx.arc(bx, by, b.r, 0, 7); ctx.fill(); }
+      if (by > waterTop + 10) { ctx.beginPath(); ctx.arc(bx, by, b.r * 1.7, 0, 7); ctx.fill(); }
     }
     ctx.restore();
     dp.raf = requestAnimationFrame(frame);
